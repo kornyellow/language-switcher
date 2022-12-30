@@ -29,9 +29,13 @@ void CALLBACK timer_callback(HWND handle_window, UINT u_message, UINT_PTR event_
 }
 
 int main(int argc, char** argv) {
+	ShowWindow(FindWindowA("ConsoleWindowClass", NULL), false);
+	FreeConsole();
+
 	bool is_quit = false;
 	
 	if (argc > 2) {
+		MessageBox(NULL, _T("Invalid number of arguments"), _T("Error"), MB_OK|MB_ICONERROR);
 		printf("ERROR: invalid number of arguments.");
 	}
 	if (argc == 1) {
@@ -43,6 +47,7 @@ int main(int argc, char** argv) {
 
 	handle_event = CreateEvent(NULL, true, false, _T("Language Switcher"));
 	if (handle_event == NULL) {
+		MessageBox(NULL, _T("Unable to start a program"), _T("Error"), MB_OK|MB_ICONERROR);
 		printf("ERROR: unable to start a program.");
 		return 1;
 	}
@@ -50,25 +55,31 @@ int main(int argc, char** argv) {
 		if (is_quit) {
 			SetEvent(handle_event);
 			CloseHandle(handle_event);
+			MessageBox(NULL, _T("Program is ended"), _T("Success"), MB_OK|MB_ICONINFORMATION);
 			printf("SUCCESS: program is ended.");
 			return 0;
 		}
 		else {
+			MessageBox(NULL, _T("Program is already running..."), _T("Error"), MB_OK|MB_ICONERROR);
 			printf("ERROR: program is already running...");
 			return 1;
 		}
 	}
 	
 	if (SetTimer(NULL, 0, 1000, timer_callback) == NULL) {
+		MessageBox(NULL, _T("Unable to start a program"), _T("Error"), MB_OK|MB_ICONERROR);
 		printf("ERROR: unable to start a program.");
 		return 1;
 	}
 
 	handle_hook = SetWindowsHookEx(WH_KEYBOARD_LL, keyboard_hook, GetModuleHandle(NULL), 0);
 	if (handle_hook == NULL) {
+		MessageBox(NULL, _T("Unable to start a program"), _T("Error"), MB_OK|MB_ICONERROR);
 		printf("ERROR: unable to start a program.");
 		return 1;
 	}
+
+	MessageBox(NULL, _T("Program is started"), _T("Success"), MB_OK|MB_ICONINFORMATION);
 
 	MSG msg;
 	while (GetMessage(&msg,0,0,0)) {
