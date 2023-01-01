@@ -79,8 +79,6 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
-	MessageBox(NULL, _T("Program is started"), _T("Success"), MB_OK|MB_ICONINFORMATION);
-
 	MSG msg;
 	while (GetMessage(&msg,0,0,0)) {
 		TranslateMessage(&msg);
