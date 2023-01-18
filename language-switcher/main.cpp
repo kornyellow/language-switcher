@@ -1,20 +1,36 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <stdbool.h>
 #include <windows.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include <tchar.h>
+#include <time.h>
 
 UINT	toggle_key = VK_CAPITAL;
 HHOOK	handle_hook;
 HANDLE  handle_event;
+bool	is_key_on = false;
+clock_t	key_hold_time_start, key_hold_time_total;
 
-LRESULT CALLBACK keyboard_hook(int n_code, WPARAM w_param,LPARAM l_param) {
+LRESULT CALLBACK keyboard_hook(int n_code, WPARAM w_param, LPARAM l_param) {
 	if (n_code == HC_ACTION) {
 		KBDLLHOOKSTRUCT* s_keyboard_hook = (KBDLLHOOKSTRUCT*) l_param;
 		HWND handle_window = GetForegroundWindow();
 		if (s_keyboard_hook->vkCode == toggle_key) {
-			if (w_param == WM_KEYDOWN && handle_window != NULL) {
-				PostMessage(handle_window, WM_INPUTLANGCHANGEREQUEST, 0, HKL_NEXT);
+			if (w_param == WM_KEYDOWN && handle_window != NULL && !is_key_on) {
+				is_key_on = true;
+				key_hold_time_start = clock();
+			}
+			if (w_param == WM_KEYUP && handle_window != NULL) {
+				is_key_on = false;
+				key_hold_time_total = (double)(clock() - key_hold_time_start) / CLOCKS_PER_SEC;
+
+				if (key_hold_time_total >= 1) {
+					keybd_event(VK_CAPITAL, 0x45, KEYEVENTF_EXTENDEDKEY | 0, 0);
+					keybd_event(VK_CAPITAL, 0x45, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
+				}
+				else {
+					PostMessage(handle_window, WM_INPUTLANGCHANGEREQUEST, 0, HKL_NEXT);
+				}
 			}
 			return 1;
 		}
@@ -29,8 +45,8 @@ void CALLBACK timer_callback(HWND handle_window, UINT u_message, UINT_PTR event_
 }
 
 int main(int argc, char** argv) {
-	ShowWindow(FindWindowA("ConsoleWindowClass", NULL), false);
-	FreeConsole();
+	//ShowWindow(FindWindowA("ConsoleWindowClass", NULL), false);
+	//FreeConsole();
 
 	bool is_quit = false;
 	
