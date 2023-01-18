@@ -7,28 +7,43 @@
 
 UINT	toggle_key = VK_CAPITAL;
 HHOOK	handle_hook;
-HANDLE  handle_event;
-bool	is_key_on = false;
-clock_t	key_hold_time_start, key_hold_time_total;
+HANDLE	handle_event;
+
+bool	is_key_hold = false, is_key_execute = false;
+bool	is_caplock = false;
+clock_t	key_start, key_end;
+double	key_total;
 
 LRESULT CALLBACK keyboard_hook(int n_code, WPARAM w_param, LPARAM l_param) {
 	if (n_code == HC_ACTION) {
 		KBDLLHOOKSTRUCT* s_keyboard_hook = (KBDLLHOOKSTRUCT*) l_param;
 		HWND handle_window = GetForegroundWindow();
-		if (s_keyboard_hook->vkCode == toggle_key) {
-			if (w_param == WM_KEYDOWN && handle_window != NULL && !is_key_on) {
-				is_key_on = true;
-				key_hold_time_start = clock();
+		if (s_keyboard_hook->vkCode == toggle_key && !is_caplock) {
+			if (w_param == WM_KEYDOWN && handle_window != NULL && !is_key_hold) {
+				is_key_hold = true;
+				key_start = clock();
+			}
+			if (w_param == WM_KEYDOWN && handle_window != NULL && is_key_hold && !is_key_execute) {
+				key_end = clock();
+				key_total = (double)(key_end - key_start) / CLOCKS_PER_SEC;
+
+				if (key_total >= 1) {
+					is_key_execute = true;
+
+					is_caplock = true;
+					keybd_event(VK_CAPITAL, 0x45, KEYEVENTF_EXTENDEDKEY|0, 0);
+					keybd_event(VK_CAPITAL, 0x45, KEYEVENTF_EXTENDEDKEY|KEYEVENTF_KEYUP, 0);
+					is_caplock = false;
+				}
 			}
 			if (w_param == WM_KEYUP && handle_window != NULL) {
-				is_key_on = false;
-				key_hold_time_total = (double)(clock() - key_hold_time_start) / CLOCKS_PER_SEC;
-
-				if (key_hold_time_total >= 1) {
-					keybd_event(VK_CAPITAL, 0x45, KEYEVENTF_EXTENDEDKEY | 0, 0);
-					keybd_event(VK_CAPITAL, 0x45, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
-				}
-				else {
+				key_end = clock();
+				key_total = (double)(key_end - key_start) / CLOCKS_PER_SEC;
+				
+				is_key_hold = false;
+				is_key_execute = false;
+				is_caplock = false;
+				if (key_total < 1) {
 					PostMessage(handle_window, WM_INPUTLANGCHANGEREQUEST, 0, HKL_NEXT);
 				}
 			}
