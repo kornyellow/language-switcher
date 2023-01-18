@@ -60,8 +60,8 @@ void CALLBACK timer_callback(HWND handle_window, UINT u_message, UINT_PTR event_
 }
 
 int main(int argc, char** argv) {
-	//ShowWindow(FindWindowA("ConsoleWindowClass", NULL), false);
-	//FreeConsole();
+	ShowWindow(FindWindowA("ConsoleWindowClass", NULL), false);
+	FreeConsole();
 
 	bool is_quit = false;
 	
